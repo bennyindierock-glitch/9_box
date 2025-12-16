@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nine Box - Gestión de Talento</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2c3e50 0%, #4a5568 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d3748 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 0;
+        }
+
+        .sidebar {
+            background: #f5f5f5;
+            padding: 30px;
+            border-right: 2px solid #d1d5db;
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
+
+        .add-employee {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .add-employee h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95em;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #4a5568;
+            box-shadow: 0 0 0 3px rgba(74, 85, 104, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(45, 55, 72, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+        }
+
+        .filter-section {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .filter-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .dept-filter {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .dept-chip {
+            padding: 8px 15px;
+            background: #e5e7eb;
+            border: 2px solid #d1d5db;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #4b5563;
+        }
+
+        .dept-chip:hover {
+            background: #d1d5db;
+        }
+
+        .dept-chip.active {
+            background: #1f2937;
+            color: white;
+            border-color: #1f2937;
+        }
+
+        .nine-box-container {
+            padding: 40px;
+        }
+
+        .nine-box-title {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .nine-box-title h2 {
+            color: #2c3e50;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .view-tabs {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            padding: 12px 30px;
+            border: 2px solid #d1d5db;
+            background: white;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #4b5563;
+        }
+
+        .tab-btn.active {
+            background: #1f2937;
+            color: white;
+            border-color: #1f2937;
+        }
+
+        .tab-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .view-section {
+            display: none;
+        }
+
+        .view-section.active {
+            display: block;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .export-btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+        }
+
+        .export-btn.pdf {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+        }
+
+        .export-btn.excel {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        }
+
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .axis-labels {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .y-axis {
+            writing-mode: vertical-rl;
+            text-align: center;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1em;
+            padding: 20px 0;
+        }
+
+        .grid-wrapper {
+            flex: 1;
+        }
+
+        .nine-box-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .box {
+            aspect-ratio: 1;
+            border: 3px solid #ddd;
+            border-radius: 15px;
+            padding: 15px;
+            min-height: 180px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            opacity: 0.1;
+            z-index: 0;
+        }
+
+        .box > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .box:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .box-title {
+            font-weight: 700;
+            font-size: 0.85em;
+            margin-bottom: 10px;
+            text-align: center;
+            padding: 8px;
+            border-radius: 8px;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .box.high-high { background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); border-color: #1a1a1a; }
+        .box.high-high::before { background: #1a1a1a; }
+        .box.high-high .box-title { background: rgba(26, 26, 26, 0.9); }
+
+        .box.high-medium { background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%); border-color: #2d3748; }
+        .box.high-medium::before { background: #2d3748; }
+        .box.high-medium .box-title { background: rgba(45, 55, 72, 0.9); }
+
+        .box.high-low { background: linear-gradient(135deg, #4a5568 0%, #718096 100%); border-color: #4a5568; }
+        .box.high-low::before { background: #4a5568; }
+        .box.high-low .box-title { background: rgba(74, 85, 104, 0.9); }
+
+        .box.medium-high { background: linear-gradient(135deg, #374151 0%, #4b5563 100%); border-color: #374151; }
+        .box.medium-high::before { background: #374151; }
+        .box.medium-high .box-title { background: rgba(55, 65, 81, 0.9); }
+
+        .box.medium-medium { background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%); border-color: #6b7280; }
+        .box.medium-medium::before { background: #6b7280; }
+        .box.medium-medium .box-title { background: rgba(107, 114, 128, 0.9); }
+
+        .box.medium-low { background: linear-gradient(135deg, #9ca3af 0%, #d1d5db 100%); border-color: #9ca3af; }
+        .box.medium-low::before { background: #9ca3af; }
+        .box.medium-low .box-title { background: rgba(156, 163, 175, 0.9); color: #1f2937; }
+
+        .box.low-high { background: linear-gradient(135deg, #cbd5e1 0%, #e2e8f0 100%); border-color: #cbd5e1; }
+        .box.low-high::before { background: #cbd5e1; }
+        .box.low-high .box-title { background: rgba(203, 213, 225, 0.9); color: #1f2937; }
+
+        .box.low-medium { background: linear-gradient(135deg, #e5e7eb 0%, #f3f4f6 100%); border-color: #e5e7eb; }
+        .box.low-medium::before { background: #e5e7eb; }
+        .box.low-medium .box-title { background: rgba(229, 231, 235, 0.9); color: #1f2937; }
+
+        .box.low-low { background: linear-gradient(135deg, #f3f4f6 0%, #ffffff 100%); border-color: #e5e7eb; }
+        .box.low-low::before { background: #f3f4f6; }
+        .box.low-low .box-title { background: rgba(243, 244, 246, 0.9); color: #1f2937; }
+
+        .x-axis {
+            text-align: center;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1em;
+            margin-top: 10px;
+        }
+
+        .employee-badge {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin: 5px 0;
+            font-size: 0.85em;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 3px solid #4a5568;
+        }
+
+        .employee-badge:hover {
+            transform: translateX(3px);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+        }
+
+        .employee-badge strong {
+            color: #2c3e50;
+            display: block;
+        }
+
+        .employee-badge small {
+            color: #666;
+            display: block;
+        }
+
+        .dept-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            background: #4a5568;
+            color: white;
+            border-radius: 5px;
+            font-size: 0.75em;
+            margin-top: 5px;
+        }
+
+        .delete-btn {
+            float: right;
+            background: #1f2937;
+            color: white;
+            border: none;
+            padding: 3px 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.3s;
+        }
+
+        .delete-btn:hover {
+            background: #111827;
+        }
+
+        .legend {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 30px;
+            padding: 25px;
+            background: #f5f5f5;
+            border-radius: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .legend-color {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .legend-text {
+            font-size: 0.85em;
+            color: #555;
+            font-weight: 600;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            padding: 25px;
+            background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .dashboard-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .dashboard-card h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+        }
+
+        .dept-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .dept-stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background: #f9fafb;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .dept-stat-row:hover {
+            background: #e5e7eb;
+            transform: translateX(5px);
+        }
+
+        .succession-plan {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .succession-plan h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            text-align: center;
+        }
+
+        .succession-category {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 12px;
+            border-left: 5px solid #1f2937;
+        }
+
+        .succession-category h4 {
+            color: #1f2937;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .succession-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .succession-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .succession-item-info strong {
+            color: #2c3e50;
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .succession-item-info small {
+            color: #666;
+        }
+
+        .succession-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .badge-ready {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-developing {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-potential {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .quadrant-distribution {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .quadrant-item {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .quadrant-item strong {
+            display: block;
+            font-size: 1.8em;
+            color: #1f2937;
+            margin-bottom: 5px;
+        }
+
+        .quadrant-item span {
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .drag-over {
+            background: rgba(74, 85, 104, 0.2) !important;
+            border: 3px dashed #4a5568 !important;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4a5568;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #2d3748;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            .sidebar, .export-buttons, .view-tabs {
+                display: none;
+            }
+            .container {
+                box-shadow: none;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                border-right: none;
+                border-bottom: 2px solid #d1d5db;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Nine Box - Gestión de Talento</h1>
+            <p>Sistema profesional de evaluación y desarrollo de empleados por departamento</p>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="add-employee">
+                    <h3>➕ Agregar Empleado</h3>
+                    <div class="form-group">
+                        <label>Nombre Completo</label>
+                        <input type="text" id="empName" placeholder="Juan Pérez">
+                    </div>
+                    <div class="form-group">
+                        <label>Puesto</label>
+                        <input type="text" id="empPosition" placeholder="Desarrollador Senior">
+                    </div>
+                    <div class="form-group">
+                        <label>Departamento</label>
+                        <select id="empDepartment">
+                            <option value="">Seleccionar...</option>
+                            <option value="RH">Recursos Humanos</option>
+                            <option value="Produccion">Producción</option>
+                            <option value="Ingenieria">Ingeniería</option>
+                            <option value="EHS">EHS</option>
+                            <option value="IT">IT</option>
+                            <option value="Materiales">Materiales</option>
+                            <option value="Mantenimiento">Mantenimiento</option>
+                            <option value="Finanzas">Finanzas</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Desempeño</label>
+                        <select id="empPerformance">
+                            <option value="">Seleccionar...</option>
+                            <option value="high">Alto</option>
+                            <option value="medium">Medio</option>
+                            <option value="low">Bajo</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Potencial</label>
+                        <select id="empPotential">
+                            <option value="">Seleccionar...</option>
+                            <option value="high">Alto</option>
+                            <option value="medium">Medio</option>
+                            <option value="low">Bajo</option>
+                        </select>
+                    </div>
+                    <button class="btn" onclick="addEmployee()">Agregar al Nine Box</button>
+                    <button class="btn btn-secondary" onclick="clearAll()">Limpiar Todo</button>
+                </div>
+
+                <div class="filter-section">
+                    <h3>🔍 Filtrar por Departamento</h3>
+                    <div class="dept-filter">
+                        <div class="dept-chip active" data-dept="all" onclick="filterByDept('all')">Todos</div>
+                        <div class="dept-chip" data-dept="RH" onclick="filterByDept('RH')">RH</div>
+                        <div class="dept-chip" data-dept="Produccion" onclick="filterByDept('Produccion')">Producción</div>
+                        <div class="dept-chip" data-dept="Ingenieria" onclick="filterByDept('Ingenieria')">Ingeniería</div>
+                        <div class="dept-chip" data-dept="EHS" onclick="filterByDept('EHS')">EHS</div>
+                        <div class="dept-chip" data-dept="IT" onclick="filterByDept('IT')">IT</div>
+                        <div class="dept-chip" data-dept="Materiales" onclick="filterByDept('Materiales')">Materiales</div>
+                        <div class="dept-chip" data-dept="Mantenimiento" onclick="filterByDept('Mantenimiento')">Mant.</div>
+                        <div class="dept-chip" data-dept="Finanzas" onclick="filterByDept('Finanzas')">Finanzas</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="nine-box-container">
+                <div class="nine-box-title">
+                    <h2>Matriz Nine Box</h2>
+                    <p id="filterStatus" style="color: #666; margin-top: 10px;">Mostrando: Todos los departamentos</p>
+                </div>
+
+                <div class="view-tabs">
+                    <button class="tab-btn active" onclick="switchView('ninebox')">Nine Box</button>
+                    <button class="tab-btn" onclick="switchView('dashboard')">Dashboard</button>
+                    <button class="tab-btn" onclick="switchView('succession')">Plan de Sucesión</button>
+                </div>
+
+                <div class="export-buttons">
+                    <button class="export-btn pdf" onclick="exportToPDF()">📄 Exportar a PDF</button>
+                    <button class="export-btn excel" onclick="exportToExcel()">📊 Exportar a Excel</button>
+                </div>
+
+                <!-- NINE BOX VIEW -->
+                <div id="nineboxView" class="view-section active">
+                    <div class="stats">
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalEmployees">0</div>
+                            <div class="stat-label">Total Empleados</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="highPotential">0</div>
+                            <div class="stat-label">Alto Potencial</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="topTalent">0</div>
+                            <div class="stat-label">Talento Estrella</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="deptCount">0</div>
+                            <div class="stat-label">Departamentos</div>
+                        </div>
+                    </div>
+
+                    <div class="axis-labels">
+                        <div class="y-axis">↑ POTENCIAL ↑</div>
+                        <div class="grid-wrapper">
+                            <div class="nine-box-grid">
+                                <div class="box high-high" data-perf="high" data-pot="high" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                                    <div class="box-title">⭐ Estrella<br>(Alto/Alto)</div>
+                                    <div class="box-content" id="box-high-high"></div>
+                                </div>
+                                <div class="box high-medium" data-perf="high" data-pot="medium" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                                    <div class="box-title">🚀 Alto Desempeño<br>(Alto/Medio)</div>
+                                    <div class="box-content" id="box-high-medium"></div>
+                                </div>
+                                <div class="box high-low" data-perf="high" data-pot="low" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                                    <div class="box-title">💪 Experto<br>(Alto/Bajo)</div>
+                                    <div class="box-content" id="box-high-low"></div>
+                                </div>
+
+                                <div class="box medium-high" data-perf="medium" data-pot="high" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                                    <div class="box-title">💎 Potencial Clave<br>(Medio/Alto)</div>
+                                    <div class="box-content" id="box-medium-high"></div>
+                                </div>
+                                <div class="box medium-medium" data-perf="medium" data-pot="medium" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                                    <div class="box-title">⚖️ Desempeño Sólido<br>(Medio/Medio)</div>
+                                    <div class="box-content" id="box-medium-medium"></div>
+                                </div>
+                                <div class="box medium-low" data-perf="medium" data-pot="low" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                                    <div class="box-title">🔧 Profesional<br>(Medio/Bajo)</div>
+                                    <div class="box-content" id="box-medium-low"></div>
+                                </div>
+
+                                <div class="box low-high" data-perf="low" data-pot="high" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                                    <div class="box-title">🌱 En Desarrollo<br>(Bajo/Alto)</div>
+                                    <div class="box-content" id="box-low-high"></div>
+                                </div>
+                                <div class="box low-medium" data-perf="low" data-pot="medium" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                                    <div class="box-title">📊 Promedio<br>(Bajo/Medio)</div>
+                                    <div class="box-content" id="box-low-medium"></div>
+                                </div>
+                                <div class="box low-low" data-perf="low" data-pot="low" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                                    <div class="box-title">⚠️ Acción Requerida<br>(Bajo/Bajo)</div>
+                                    <div class="box-content" id="box-low-low"></div>
+                                </div>
+                            </div>
+                            <div class="x-axis">← DESEMPEÑO →</div>
+                        </div>
+                    </div>
+
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);"></div>
+                            <div class="legend-text">Estrella: Retener y promover</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);"></div>
+                            <div class="legend-text">Alto Desempeño: Proyectos clave</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: linear-gradient(135deg, #4a5568 0%, #718096 100%);"></div>
+                            <div class="legend-text">Experto: Mentor técnico</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: linear-gradient(135deg, #374151 0%, #4b5563 100%);"></div>
+                            <div class="legend-text">Potencial Clave: Desarrollar</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%);"></div>
+                            <div class="legend-text">Sólido: Mantener motivado</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: linear-gradient(135deg, #9ca3af 0%, #d1d5db 100%);"></div>
+                            <div class="legend-text">Profesional: Rol estable</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: linear-gradient(135deg, #cbd5e1 0%, #e2e8f0 100%);"></div>
+                            <div class="legend-text">En Desarrollo: Entrenar</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: linear-gradient(135deg, #e5e7eb 0%, #f3f4f6 100%);"></div>
+                            <div class="legend-text">Promedio: Plan de mejora</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: linear-gradient(135deg, #f3f4f6 0%, #ffffff 100%);"></div>
+                            <div class="legend-text">Acción Requerida: Evaluar</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DASHBOARD VIEW -->
+                <div id="dashboardView" class="view-section">
+                    <div class="dashboard-card" style="margin-bottom: 20px;">
+                        <h3>📈 Distribución por Cuadrante</h3>
+                        <div class="quadrant-distribution" id="quadrantDist"></div>
+                    </div>
+
+                    <div class="dashboard-grid">
+                        <div class="dashboard-card">
+                            <h3>🏢 Estadísticas por Departamento</h3>
+                            <div class="dept-stats" id="deptStats"></div>
+                        </div>
+
+                        <div class="dashboard-card">
+                            <h3>⚡ Análisis de Riesgo de Talento</h3>
+                            <div id="riskAnalysis"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUCCESSION PLAN VIEW -->
+                <div id="successionView" class="view-section">
+                    <div class="succession-plan">
+                        <h3>👥 Plan de Sucesión Estratégico</h3>
+                        
+                        <div class="succession-category">
+                            <h4>🌟 Listos para Promoción Inmediata</h4>
+                            <p style="color: #666; margin-bottom: 15px; font-size: 0.9em;">Empleados con alto desempeño y alto potencial, preparados para asumir mayores responsabilidades.</p>
+                            <div class="succession-list" id="readyForPromotion"></div>
+                        </div>
+
+                        <div class="succession-category">
+                            <h4>🎯 En Desarrollo (1-2 años)</h4>
+                            <p style="color: #666; margin-bottom: 15px; font-size: 0.9em;">Talento con alto potencial que requiere experiencia adicional y desarrollo específico.</p>
+                            <div class="succession-list" id="inDevelopment"></div>
+                        </div>
+
+                        <div class="succession-category">
+                            <h4>💡 Potencial Emergente (2-3 años)</h4>
+                            <p style="color: #666; margin-bottom: 15px; font-size: 0.9em;">Empleados con potencial a mediano plazo que pueden ser considerados para roles futuros.</p>
+                            <div class="succession-list" id="emergingTalent"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let employees = [];
+        let draggedEmployee = null;
+        let currentFilter = 'all';
+
+        const deptNames = {
+            'RH': 'Recursos Humanos',
+            'Produccion': 'Producción',
+            'Ingenieria': 'Ingeniería',
+            'EHS': 'EHS',
+            'IT': 'IT',
+            'Materiales': 'Materiales',
+            'Mantenimiento': 'Mantenimiento',
+            'Finanzas': 'Finanzas'
+        };
+
+        function addEmployee() {
+            const name = document.getElementById('empName').value.trim();
+            const position = document.getElementById('empPosition').value.trim();
+            const department = document.getElementById('empDepartment').value;
+            const performance = document.getElementById('empPerformance').value;
+            const potential = document.getElementById('empPotential').value;
+
+            if (!name || !position || !department || !performance || !potential) {
+                alert('Por favor completa todos los campos');
+                return;
+            }
+
+            const employee = {
+                id: Date.now(),
+                name,
+                position,
+                department,
+                performance,
+                potential
+            };
+
+            employees.push(employee);
+            
+            document.getElementById('empName').value = '';
+            document.getElementById('empPosition').value = '';
+            document.getElementById('empDepartment').value = '';
+            document.getElementById('empPerformance').value = '';
+            document.getElementById('empPotential').value = '';
+
+            renderEmployee(employee);
+            updateStats();
+            updateDashboard();
+            updateSuccessionPlan();
+        }
+
+        function renderEmployee(employee) {
+            if (currentFilter !== 'all' && employee.department !== currentFilter) {
+                return;
+            }
+
+            const boxId = `box-${employee.performance}-${employee.potential}`;
+            const box = document.getElementById(boxId);
+            
+            const badge = document.createElement('div');
+            badge.className = 'employee-badge';
+            badge.draggable = true;
+            badge.dataset.id = employee.id;
+            badge.dataset.dept = employee.department;
+            badge.ondragstart = drag;
+            badge.innerHTML = `
+                <button class="delete-btn" onclick="deleteEmployee(${employee.id})">✕</button>
+                <strong>${employee.name}</strong>
+                <small>${employee.position}</small>
+                <span class="dept-badge">${employee.department}</span>
+            `;
+            
+            box.appendChild(badge);
+        }
+
+        function filterByDept(dept) {
+            currentFilter = dept;
+            
+            document.querySelectorAll('.dept-chip').forEach(chip => {
+                chip.classList.remove('active');
+            });
+            document.querySelector(`[data-dept="${dept}"]`).classList.add('active');
+
+            document.querySelectorAll('.employee-badge').forEach(badge => badge.remove());
+            
+            const filtered = dept === 'all' ? employees : employees.filter(e => e.department === dept);
+            filtered.forEach(emp => renderEmployee(emp));
+            
+            const filterText = dept === 'all' ? 'Todos los departamentos' : deptNames[dept];
+            document.getElementById('filterStatus').textContent = `Mostrando: ${filterText}`;
+            
+            updateStats();
+            updateDashboard();
+            updateSuccessionPlan();
+        }
+
+        function drag(e) {
+            draggedEmployee = e.target;
+            e.target.style.opacity = '0.5';
+        }
+
+        function allowDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        function dragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        function drop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            
+            if (draggedEmployee) {
+                const newPerf = e.currentTarget.dataset.perf;
+                const newPot = e.currentTarget.dataset.pot;
+                const empId = parseInt(draggedEmployee.dataset.id);
+                
+                const employee = employees.find(emp => emp.id === empId);
+                if (employee) {
+                    employee.performance = newPerf;
+                    employee.potential = newPot;
+                }
+                
+                e.currentTarget.querySelector('.box-content').appendChild(draggedEmployee);
+                draggedEmployee.style.opacity = '1';
+                draggedEmployee = null;
+                
+                updateStats();
+                updateDashboard();
+                updateSuccessionPlan();
+            }
+        }
+
+        function deleteEmployee(id) {
+            if (confirm('¿Estás seguro de eliminar este empleado?')) {
+                employees = employees.filter(emp => emp.id !== id);
+                const badge = document.querySelector(`[data-id="${id}"]`);
+                if (badge) badge.remove();
+                updateStats();
+                updateDashboard();
+                updateSuccessionPlan();
+            }
+        }
+
+        function clearAll() {
+            if (confirm('¿Estás seguro de eliminar todos los empleados?')) {
+                employees = [];
+                document.querySelectorAll('.employee-badge').forEach(badge => badge.remove());
+                updateStats();
+                updateDashboard();
+                updateSuccessionPlan();
+            }
+        }
+
+        function updateStats() {
+            const filtered = currentFilter === 'all' ? employees : employees.filter(e => e.department === currentFilter);
+            
+            const total = filtered.length;
+            const highPot = filtered.filter(e => e.potential === 'high').length;
+            const topTalent = filtered.filter(e => e.performance === 'high' && e.potential === 'high').length;
+            const uniqueDepts = new Set(employees.map(e => e.department)).size;
+            
+            document.getElementById('totalEmployees').textContent = total;
+            document.getElementById('highPotential').textContent = highPot;
+            document.getElementById('topTalent').textContent = topTalent;
+            document.getElementById('deptCount').textContent = uniqueDepts;
+        }
+
+        function switchView(view) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.view-section').forEach(section => section.classList.remove('active'));
+            
+            if (view === 'ninebox') {
+                document.querySelector('[onclick="switchView(\'ninebox\')"]').classList.add('active');
+                document.getElementById('nineboxView').classList.add('active');
+            } else if (view === 'dashboard') {
+                document.querySelector('[onclick="switchView(\'dashboard\')"]').classList.add('active');
+                document.getElementById('dashboardView').classList.add('active');
+                updateDashboard();
+            } else if (view === 'succession') {
+                document.querySelector('[onclick="switchView(\'succession\')"]').classList.add('active');
+                document.getElementById('successionView').classList.add('active');
+                updateSuccessionPlan();
+            }
+        }
+
+        function updateDashboard() {
+            const filtered = currentFilter === 'all' ? employees : employees.filter(e => e.department === currentFilter);
+            
+            // Quadrant Distribution
+            const quadrantDist = document.getElementById('quadrantDist');
+            const quadrants = [
+                { key: 'high-high', label: 'Estrella', count: filtered.filter(e => e.performance === 'high' && e.potential === 'high').length },
+                { key: 'high-medium', label: 'Alto Desempeño', count: filtered.filter(e => e.performance === 'high' && e.potential === 'medium').length },
+                { key: 'high-low', label: 'Experto', count: filtered.filter(e => e.performance === 'high' && e.potential === 'low').length },
+                { key: 'medium-high', label: 'Potencial Clave', count: filtered.filter(e => e.performance === 'medium' && e.potential === 'high').length },
+                { key: 'medium-medium', label: 'Sólido', count: filtered.filter(e => e.performance === 'medium' && e.potential === 'medium').length },
+                { key: 'medium-low', label: 'Profesional', count: filtered.filter(e => e.performance === 'medium' && e.potential === 'low').length },
+                { key: 'low-high', label: 'En Desarrollo', count: filtered.filter(e => e.performance === 'low' && e.potential === 'high').length },
+                { key: 'low-medium', label: 'Promedio', count: filtered.filter(e => e.performance === 'low' && e.potential === 'medium').length },
+                { key: 'low-low', label: 'Acción Requerida', count: filtered.filter(e => e.performance === 'low' && e.potential === 'low').length }
+            ];
+
+            quadrantDist.innerHTML = quadrants.map(q => `
+                <div class="quadrant-item">
+                    <strong>${q.count}</strong>
+                    <span>${q.label}</span>
+                </div>
+            `).join('');
+
+            // Department Stats
+            const deptStats = document.getElementById('deptStats');
+            const deptData = {};
+            
+            Object.keys(deptNames).forEach(dept => {
+                const deptEmps = employees.filter(e => e.department === dept);
+                if (deptEmps.length > 0) {
+                    deptData[dept] = {
+                        total: deptEmps.length,
+                        highPot: deptEmps.filter(e => e.potential === 'high').length
+                    };
+                }
+            });
+
+            deptStats.innerHTML = Object.keys(deptData).map(dept => `
+                <div class="dept-stat-row">
+                    <span><strong>${deptNames[dept]}</strong></span>
+                    <span>${deptData[dept].total} empleados (${deptData[dept].highPot} alto potencial)</span>
+                </div>
+            `).join('') || '<p style="text-align: center; color: #999;">No hay datos disponibles</p>';
+
+            // Risk Analysis
+            const riskAnalysis = document.getElementById('riskAnalysis');
+            const atRisk = filtered.filter(e => e.performance === 'low' && e.potential === 'low').length;
+            const needsDev = filtered.filter(e => e.performance === 'low').length;
+            const flightRisk = filtered.filter(e => e.performance === 'high' && e.potential === 'high').length;
+
+            riskAnalysis.innerHTML = `
+                <div class="dept-stats">
+                    <div class="dept-stat-row">
+                        <span><strong>⚠️ Empleados en riesgo</strong></span>
+                        <span style="color: #dc2626; font-weight: bold;">${atRisk}</span>
+                    </div>
+                    <div class="dept-stat-row">
+                        <span><strong>📚 Requieren desarrollo</strong></span>
+                        <span style="color: #f59e0b; font-weight: bold;">${needsDev}</span>
+                    </div>
+                    <div class="dept-stat-row">
+                        <span><strong>🌟 Talento crítico (retener)</strong></span>
+                        <span style="color: #059669; font-weight: bold;">${flightRisk}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateSuccessionPlan() {
+            const filtered = currentFilter === 'all' ? employees : employees.filter(e => e.department === currentFilter);
+
+            // Ready for promotion (High/High)
+            const ready = filtered.filter(e => e.performance === 'high' && e.potential === 'high');
+            const readyContainer = document.getElementById('readyForPromotion');
+            readyContainer.innerHTML = ready.length > 0 ? ready.map(emp => `
+                <div class="succession-item">
+                    <div class="succession-item-info">
+                        <strong>${emp.name}</strong>
+                        <small>${emp.position} - ${deptNames[emp.department]}</small>
+                    </div>
+                    <span class="succession-badge badge-ready">Listo Ahora</span>
+                </div>
+            `).join('') : '<p style="text-align: center; color: #999; padding: 20px;">No hay candidatos en esta categoría</p>';
+
+            // In development (High potential, medium/low performance OR Medium/High)
+            const developing = filtered.filter(e => 
+                (e.potential === 'high' && (e.performance === 'medium' || e.performance === 'low')) ||
+                (e.performance === 'high' && e.potential === 'medium')
+            );
+            const devContainer = document.getElementById('inDevelopment');
+            devContainer.innerHTML = developing.length > 0 ? developing.map(emp => `
+                <div class="succession-item">
+                    <div class="succession-item-info">
+                        <strong>${emp.name}</strong>
+                        <small>${emp.position} - ${deptNames[emp.department]}</small>
+                    </div>
+                    <span class="succession-badge badge-developing">1-2 Años</span>
+                </div>
+            `).join('') : '<p style="text-align: center; color: #999; padding: 20px;">No hay candidatos en esta categoría</p>';
+
+            // Emerging talent (Medium/Medium)
+            const emerging = filtered.filter(e => e.performance === 'medium' && e.potential === 'medium');
+            const emergingContainer = document.getElementById('emergingTalent');
+            emergingContainer.innerHTML = emerging.length > 0 ? emerging.map(emp => `
+                <div class="succession-item">
+                    <div class="succession-item-info">
+                        <strong>${emp.name}</strong>
+                        <small>${emp.position} - ${deptNames[emp.department]}</small>
+                    </div>
+                    <span class="succession-badge badge-potential">2-3 Años</span>
+                </div>
+            `).join('') : '<p style="text-align: center; color: #999; padding: 20px;">No hay candidatos en esta categoría</p>';
+        }
+
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'mm', 'a4');
+            
+            const filterText = currentFilter === 'all' ? 'Todos' : deptNames[currentFilter];
+            
+            doc.setFontSize(20);
+            doc.text('Nine Box - Reporte de Talento', 148, 20, { align: 'center' });
+            
+            doc.setFontSize(12);
+            doc.text(`Departamento: ${filterText}`, 148, 30, { align: 'center' });
+            doc.text(`Fecha: ${new Date().toLocaleDateString('es-MX')}`, 148, 37, { align: 'center' });
+            
+            const filtered = currentFilter === 'all' ? employees : employees.filter(e => e.department === currentFilter);
+            
+            const boxLabels = {
+                'high-high': 'Estrella (Alto/Alto)',
+                'high-medium': 'Alto Desempeño (Alto/Medio)',
+                'high-low': 'Experto (Alto/Bajo)',
+                'medium-high': 'Potencial Clave (Medio/Alto)',
+                'medium-medium': 'Desempeño Sólido (Medio/Medio)',
+                'medium-low': 'Profesional (Medio/Bajo)',
+                'low-high': 'En Desarrollo (Bajo/Alto)',
+                'low-medium': 'Promedio (Bajo/Medio)',
+                'low-low': 'Acción Requerida (Bajo/Bajo)'
+            };
+
+            let yPos = 50;
+            
+            Object.keys(boxLabels).forEach(box => {
+                const [perf, pot] = box.split('-');
+                const empsInBox = filtered.filter(e => e.performance === perf && e.potential === pot);
+                
+                if (empsInBox.length > 0) {
+                    doc.setFontSize(14);
+                    doc.setFont(undefined, 'bold');
+                    doc.text(boxLabels[box], 15, yPos);
+                    yPos += 7;
+                    
+                    doc.setFontSize(10);
+                    doc.setFont(undefined, 'normal');
+                    empsInBox.forEach(emp => {
+                        doc.text(`• ${emp.name} - ${emp.position} (${emp.department})`, 20, yPos);
+                        yPos += 6;
+                    });
+                    yPos += 3;
+                    
+                    if (yPos > 180) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+                }
+            });
+            
+            doc.setFontSize(10);
+            doc.text(`Total Empleados: ${filtered.length}`, 15, yPos + 10);
+            doc.text(`Alto Potencial: ${filtered.filter(e => e.potential === 'high').length}`, 15, yPos + 17);
+            doc.text(`Talento Estrella: ${filtered.filter(e => e.performance === 'high' && e.potential === 'high').length}`, 15, yPos + 24);
+            
+            doc.save(`nine-box-${currentFilter}-${Date.now()}.pdf`);
+        }
+
+        function exportToExcel() {
+            const filtered = currentFilter === 'all' ? employees : employees.filter(e => e.department === currentFilter);
+            
+            const excelData = filtered.map(emp => ({
+                'Nombre': emp.name,
+                'Puesto': emp.position,
+                'Departamento': emp.department,
+                'Desempeño': emp.performance === 'high' ? 'Alto' : emp.performance === 'medium' ? 'Medio' : 'Bajo',
+                'Potencial': emp.potential === 'high' ? 'Alto' : emp.potential === 'medium' ? 'Medio' : 'Bajo',
+                'Clasificación': getClassification(emp.performance, emp.potential)
+            }));
+            
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(excelData);
+            
+            ws['!cols'] = [
+                { wch: 25 },
+                { wch: 25 },
+                { wch: 18 },
+                { wch: 12 },
+                { wch: 12 },
+                { wch: 30 }
+            ];
+            
+            XLSX.utils.book_append_sheet(wb, ws, 'Nine Box');
+            
+            const summary = [
+                ['Resumen Ejecutivo'],
+                [''],
+                ['Total Empleados', filtered.length],
+                ['Alto Potencial', filtered.filter(e => e.potential === 'high').length],
+                ['Talento Estrella', filtered.filter(e => e.performance === 'high' && e.potential === 'high').length],
+                [''],
+                ['Distribución por Cuadrante'],
+                ['Estrella (Alto/Alto)', filtered.filter(e => e.performance === 'high' && e.potential === 'high').length],
+                ['Alto Desempeño (Alto/Medio)', filtered.filter(e => e.performance === 'high' && e.potential === 'medium').length],
+                ['Experto (Alto/Bajo)', filtered.filter(e => e.performance === 'high' && e.potential === 'low').length],
+                ['Potencial Clave (Medio/Alto)', filtered.filter(e => e.performance === 'medium' && e.potential === 'high').length],
+                ['Desempeño Sólido (Medio/Medio)', filtered.filter(e => e.performance === 'medium' && e.potential === 'medium').length],
+                ['Profesional (Medio/Bajo)', filtered.filter(e => e.performance === 'medium' && e.potential === 'low').length],
+                ['En Desarrollo (Bajo/Alto)', filtered.filter(e => e.performance === 'low' && e.potential === 'high').length],
+                ['Promedio (Bajo/Medio)', filtered.filter(e => e.performance === 'low' && e.potential === 'medium').length],
+                ['Acción Requerida (Bajo/Bajo)', filtered.filter(e => e.performance === 'low' && e.potential === 'low').length]
+            ];
+            
+            const ws2 = XLSX.utils.aoa_to_sheet(summary);
+            XLSX.utils.book_append_sheet(wb, ws2, 'Resumen');
+            
+            const filterText = currentFilter === 'all' ? 'todos' : currentFilter;
+            XLSX.writeFile(wb, `nine-box-${filterText}-${Date.now()}.xlsx`);
+        }
+
+        function getClassification(performance, potential) {
+            const map = {
+                'high-high': 'Estrella (Alto/Alto)',
+                'high-medium': 'Alto Desempeño (Alto/Medio)',
+                'high-low': 'Experto (Alto/Bajo)',
+                'medium-high': 'Potencial Clave (Medio/Alto)',
+                'medium-medium': 'Desempeño Sólido (Medio/Medio)',
+                'medium-low': 'Profesional (Medio/Bajo)',
+                'low-high': 'En Desarrollo (Bajo/Alto)',
+                'low-medium': 'Promedio (Bajo/Medio)',
+                'low-low': 'Acción Requerida (Bajo/Bajo)'
+            };
+            return map[`${performance}-${potential}`];
+        }
+
+        document.addEventListener('dragend', function(e) {
+            if (draggedEmployee) {
+                draggedEmployee.style.opacity = '1';
+                draggedEmployee = null;
+            }
+        });
+
+        updateStats();
+        updateDashboard();
+        updateSuccessionPlan();
+    </script>
+<footer style="
+    text-align: center;
+    padding: 8px 0;
+    font-size: 0.75em;
+    color: #9ca3af;
+">
+    Made by Venancio Flores
+</footer>
+</body>
+</html>
